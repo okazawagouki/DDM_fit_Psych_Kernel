@@ -1,0 +1,64 @@
+#!/bin/bash
+
+JOB_BASE_NAME="DDM_PK"
+
+# Define the expected output file path
+output_file="/home/okazawa/DDM_fit_Psych_Kernel/data/example_PK_fit.mat"
+
+# Check if the output file already exists
+if [ ! -f "$output_file" ]; then
+    cat <<SLURM_EOF > job.slurm
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=1
+#SBATCH --cpus-per-task=20
+#SBATCH --time=24:00:00
+#SBATCH --mem=30GB
+#SBATCH --job-name=${JOB_BASE_NAME}
+#SBATCH --output=/home/okazawa/log/${JOB_BASE_NAME}.log
+
+cd /home/okazawa/DDM_fit_Psych_Kernel/
+
+cat<<EOF | srun matlab -nodisplay > ~/log/${JOB_BASE_NAME}.txt 2>&1
+addpath(genpath('/home/okazawa/DDM_fit_Psych_Kernel/functions'));
+load('data/example_PK_data.mat');
+
+% define random initial point
+seed = 1;
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',seed));
+
+k = rand(1,3) * .2; % sensitivity
+B = 20 + rand * 20; % bound height
+T0 = 450 + rand * 150; % mean non-decision time (ms)
+T0_sigma = T0 * .3;
+urg_half = 1;
+urg_asymp = 0;
+guess = [k, B, T0, T0_sigma, urg_half, urg_asymp];
+fixed = [zeros(1, length(k)), 0 0 0 1 1];
+
+% set options
+clear opt;
+opt.fitwhat = 'RESPRT';
+opt.nfeature = 3;
+opt.fluc_t = 1000/75 * 8;
+opt.TolX = 1e-2;
+opt.TolFun = 1e-1;
+
+opt.temporary_file = 'data/example_PK_fit_temporary.mat';
+
+
+% run fit
+fprintf('Running DDM fit.\n');
+[model_param, modelLL, trial_data] = fit_DDM_Kernel(trial_data, guess, fixed, opt);
+save('data/example_PK_fit.mat', 'model_param', 'modelLL', 'trial_data', 'seed');
+
+exit
+EOF
+SLURM_EOF
+
+    # Submit the job
+    sbatch job.slurm
+else
+    echo "Skipping job - output file already exists"
+fi
+
