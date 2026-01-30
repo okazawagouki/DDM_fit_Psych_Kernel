@@ -9,7 +9,7 @@ This code fits the drift diffusion model (DDM) to choice and reaction time data 
 
 ## Requirements
 The code is tested using MATLAB 2019b (with Statistics Toolbox).  
-It uses a mex file solving the Fokker-Planck equation developed in the Kiani lab: [https://github.com/KianiLab/FokkerPlanck](https://github.com/KianiLab/FokkerPlanck). The mex file is included in this repository.
+It uses a mex file solving the Fokker-Planck equation developed in the Kiani lab. The mex file is included in this repository. The source code is available at [https://github.com/KianiLab/FokkerPlanck](https://github.com/KianiLab/FokkerPlanck). 
 
 
 ## Package
